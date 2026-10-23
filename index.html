@@ -1,0 +1,309 @@
+```html
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Rohit Insta</title>
+
+<style>
+*{box-sizing:border-box}
+body{
+ margin:0;background:#fafafa;color:#222;
+ font-family:Arial,sans-serif;padding-bottom:70px
+}
+header{
+ background:white;border-bottom:1px solid #ddd;
+ padding:15px;display:flex;justify-content:space-between;
+ align-items:center;position:sticky;top:0;z-index:5
+}
+.logo{
+ font-size:25px;font-weight:bold;
+ background:linear-gradient(45deg,#f90,#e09,#7040dd);
+ color:transparent;background-clip:text
+}
+button{cursor:pointer;border:0}
+.icon{font-size:23px;background:none}
+.container{max-width:600px;margin:auto;padding:10px}
+.stories{display:flex;gap:14px;overflow-x:auto;background:white;padding:15px}
+.story{text-align:center;min-width:65px;font-size:12px}
+.circle{
+ width:58px;height:58px;border-radius:50%;padding:3px;
+ background:linear-gradient(45deg,#ffb000,#e1306c,#7545e8);
+ margin:auto auto 5px
+}
+.circle img{
+ width:100%;height:100%;object-fit:cover;
+ border:2px solid white;border-radius:50%
+}
+.card{
+ background:white;border:1px solid #eee;
+ border-radius:9px;margin:15px 0;overflow:hidden
+}
+.posthead{padding:12px;display:flex;align-items:center;gap:10px}
+.avatar{
+ width:38px;height:38px;border-radius:50%;object-fit:cover
+}
+.username{font-weight:bold;flex:1}
+.postmedia{
+ width:100%;max-height:600px;object-fit:contain;
+ background:#eee;display:block
+}
+.actions{padding:10px 12px}
+.actions button{font-size:25px;background:none;margin-right:10px}
+.likes{font-weight:bold;margin:5px 0}
+.caption{margin:8px 0;overflow-wrap:anywhere}
+.comments{font-size:14px;color:#444;margin-top:8px}
+.bottom{
+ position:fixed;bottom:0;left:0;right:0;background:white;
+ border-top:1px solid #ddd;display:flex;
+ justify-content:space-around;padding:12px;z-index:10
+}
+.bottom button{font-size:23px;background:none}
+.primary{
+ background:#0095f6;color:white;padding:10px 16px;
+ border-radius:7px;font-weight:bold
+}
+input,textarea{
+ width:100%;padding:11px;border:1px solid #ddd;
+ border-radius:7px;margin:7px 0;font:inherit
+}
+#uploadBox{display:none;background:white;padding:15px;border-radius:10px}
+#profile{display:none;background:white;padding:20px;text-align:center}
+.grid{display:grid;grid-template-columns:repeat(3,1fr);gap:3px}
+.grid img,.grid video{width:100%;height:140px;object-fit:cover}
+.sectionTitle{text-align:center;padding:15px}
+.small{color:#777;font-size:13px}
+</style>
+</head>
+
+<body>
+
+<header>
+ <div class="logo">Rohit Insta</div>
+ <div>
+  <button class="icon" onclick="showUpload()">➕</button>
+  <button class="icon" onclick="showSearch()">🔍</button>
+ </div>
+</header>
+
+<div id="feedPage">
+ <div class="stories" id="stories">
+  <div class="story">
+   <div class="circle">
+    <img src="https://i.pravatar.cc/100?img=12" alt="Profile">
+   </div>
+   Your Story
+  </div>
+  <div class="story"><div class="circle"><img src="https://i.pravatar.cc/100?img=5" alt=""></div>Rahul</div>
+  <div class="story"><div class="circle"><img src="https://i.pravatar.cc/100?img=8" alt=""></div>Priya</div>
+  <div class="story"><div class="circle"><img src="https://i.pravatar.cc/100?img=11" alt=""></div>Aman</div>
+  <div class="story"><div class="circle"><img src="https://i.pravatar.cc/100?img=15" alt=""></div>Neha</div>
+ </div>
+
+ <main class="container">
+  <div id="posts"></div>
+ </main>
+</div>
+
+<section class="container" id="uploadBox">
+ <h2>➕ नई पोस्ट बनाओ</h2>
+ <label>फोटो या वीडियो चुनो</label>
+ <input type="file" id="mediaFile" accept="image/*,video/*">
+ <input id="captionInput" placeholder="तुम्हारी पोस्ट का कैप्शन...">
+ <button class="primary" onclick="publishPost()">पोस्ट शेयर करो</button>
+ <button onclick="hideUpload()" style="padding:10px">रद्द करो</button>
+ <p class="small">यह डेमो पोस्ट इसी ब्राउज़र में दिखाई देगी।</p>
+</section>
+
+<section class="container" id="profile">
+ <img class="avatar" style="width:85px;height:85px"
+ src="https://i.pravatar.cc/100?img=12" alt="Profile">
+ <h2>Rohit Nayak</h2>
+ <p>Welcome to Rohit Insta! 📸</p>
+ <div id="stats">0 पोस्ट</div>
+ <h3>मेरी पोस्ट</h3>
+ <div class="grid" id="myGrid"></div>
+</section>
+
+<section class="container" id="searchPage" style="display:none">
+ <h2>🔍 पोस्ट खोजो</h2>
+ <input id="searchInput" placeholder="यूज़र या कैप्शन खोजो..." oninput="searchPosts()">
+ <div id="searchResults"></div>
+</section>
+
+<nav class="bottom">
+ <button onclick="showPage('feedPage')">🏠</button>
+ <button onclick="showUpload()">➕</button>
+ <button onclick="showSearch()">🔍</button>
+ <button onclick="showPage('profile')">👤</button>
+</nav>
+
+<script>
+const posts = [];
+let nextId = 1;
+
+const demoPosts = [
+ {
+  id:nextId++, user:"travel_world",
+  avatar:"https://i.pravatar.cc/100?img=5",
+  media:"https://images.unsplash.com/photo-1500530855697-b586d89ba3ee?w=900",
+  type:"image",caption:"दुनिया बहुत खूबसूरत है! 🌍",
+  likes:23,liked:false,comments:[]
+ },
+ {
+  id:nextId++,user:"nature_love",
+  avatar:"https://i.pravatar.cc/100?img=8",
+  media:"https://images.unsplash.com/photo-1470770841072-f978cf4d019e?w=900",
+  type:"image",caption:"Nature vibes 🌿",
+  likes:45,liked:false,comments:[]
+ }
+];
+
+posts.push(...demoPosts);
+
+function escapeHTML(s){
+ return String(s).replace(/[&<>"']/g,c=>({
+  '&':'&amp;','<':'&lt;','>':'&gt;',
+  '"':'&quot;',"'":'&#39;'
+ }[c]));
+}
+
+function renderPosts(list=posts,target="posts"){
+ const box=document.getElementById(target);
+ box.innerHTML="";
+ list.forEach(p=>{
+  const card=document.createElement("article");
+  card.className="card";
+  const media=p.type==="video"
+   ? `<video class="postmedia" controls playsinline src="${p.media}"></video>`
+   : `<img class="postmedia" src="${p.media}" alt="Post image">`;
+
+  card.innerHTML=`
+   <div class="posthead">
+    <img class="avatar" src="${p.avatar}" alt="">
+    <span class="username">${escapeHTML(p.user)}</span>
+    <button class="icon" onclick="alert('Rohit Insta')">⋯</button>
+   </div>
+   ${media}
+   <div class="actions">
+    <button onclick="toggleLike(${p.id})">${p.liked?'❤️':'🤍'}</button>
+    <button onclick="addComment(${p.id})">💬</button>
+    <button onclick="sharePost(${p.id})">↗️</button>
+    <div class="likes">${p.likes} likes</div>
+    <div class="caption"><b>${escapeHTML(p.user)}</b> ${escapeHTML(p.caption)}</div>
+    <div class="comments">${p.comments.map(c=>`<p>${escapeHTML(c)}</p>`).join("")}</div>
+   </div>`;
+  box.appendChild(card);
+ });
+}
+
+function toggleLike(id){
+ const p=posts.find(x=>x.id===id);
+ if(!p)return;
+ p.liked=!p.liked;
+ p.likes+=p.liked?1:-1;
+ renderPosts();
+}
+
+function addComment(id){
+ const p=posts.find(x=>x.id===id);
+ if(!p)return;
+ const comment=prompt("अपना कमेंट लिखो:");
+ if(comment&&comment.trim()){
+  p.comments.push("Rohit: "+comment.trim());
+  renderPosts();
+ }
+}
+
+async function sharePost(id){
+ const p=posts.find(x=>x.id===id);
+ if(!p)return;
+ try{
+  await navigator.clipboard.writeText(p.caption+" "+p.media);
+  alert("पोस्ट की जानकारी कॉपी हो गई!");
+ }catch(e){
+  alert("Caption: "+p.caption);
+ }
+}
+
+function showUpload(){
+ hideAll();
+ document.getElementById("uploadBox").style.display="block";
+}
+
+function hideUpload(){
+ document.getElementById("uploadBox").style.display="none";
+ document.getElementById("feedPage").style.display="block";
+}
+
+function hideAll(){
+ ["feedPage","uploadBox","profile","searchPage"].forEach(id=>{
+  document.getElementById(id).style.display="none";
+ });
+}
+
+function showPage(id){
+ hideAll();
+ document.getElementById(id).style.display="block";
+ if(id==="profile")renderProfile();
+ if(id==="feedPage")renderPosts();
+}
+
+function publishPost(){
+ const file=document.getElementById("mediaFile").files[0];
+ const caption=document.getElementById("captionInput").value.trim();
+ if(!file){alert("पहले फोटो या वीडियो चुनो!");return}
+ if(!file.type.startsWith("image/")&&!file.type.startsWith("video/")){
+  alert("सही फोटो या वीडियो चुनो!");return;
+ }
+ if(file.size>20*1024*1024){
+  alert("20 MB से छोटी फाइल चुनो!");return;
+ }
+
+ const url=URL.createObjectURL(file);
+ posts.unshift({
+  id:nextId++,user:"Rohit Nayak",
+  avatar:"https://i.pravatar.cc/100?img=12",
+  media:url,type:file.type.startsWith("video/")?"video":"image",
+  caption,likes:0,liked:false,comments:[],mine:true
+ });
+
+ document.getElementById("mediaFile").value="";
+ document.getElementById("captionInput").value="";
+ showPage("feedPage");
+}
+
+function renderProfile(){
+ const mine=posts.filter(p=>p.mine);
+ document.getElementById("stats").textContent=mine.length+" पोस्ट";
+ const grid=document.getElementById("myGrid");
+ grid.innerHTML="";
+ mine.forEach(p=>{
+  const el=document.createElement(p.type==="video"?"video":"img");
+  el.src=p.media;
+  if(p.type==="video")el.controls=true;
+  grid.appendChild(el);
+ });
+}
+
+function showSearch(){
+ hideAll();
+ document.getElementById("searchPage").style.display="block";
+ searchPosts();
+}
+
+function searchPosts(){
+ const q=document.getElementById("searchInput").value.toLowerCase();
+ const results=posts.filter(p=>
+  p.user.toLowerCase().includes(q)||p.caption.toLowerCase().includes(q)
+ );
+ renderPosts(results,"searchResults");
+}
+
+renderPosts();
+</script>
+
+</body>
+</html>
+```
